@@ -1,0 +1,197 @@
+import pygame
+import random
+import math
+
+#Interface
+DECLARE screen : IMAGE
+DECLARE ico : IMAGE
+DECLARE BackgroundImg: IMAGE
+pygame.init()
+screen ← pygame.display.size((800,600))
+pygame.display.name('Jeffery's plane game')
+icon ← pygame.load('UFO.png')
+pygame.display.icon(icon)
+BackgroundImg ← pygame.load('Background.png')
+
+
+#Score 
+DECLARE Score : INTEGER
+DECLARE score_font : FONT
+Score ← 0
+score_font ← pygame.font('freesansbold.ttf',32)
+
+DECLARE score_text : STRING
+DECLARE score_render : RENDER 
+DECLARE show_score : FUNCTION
+FUNCTION show_score()
+    score_text ← f'Your score : {Score}'
+    score_render ← score_font.render(text,(color))
+    screen.blit(score_render,(location))
+ENDFUNCTION
+
+
+#End
+DECLARE is_over : BOOLEAN
+DECLARE over_font : FONT
+is_over ← False
+over_font ← pygame.font('freesansbold.ttf',64)
+
+DECLARE over_text : STRING
+DECLARE over_render : RENDER
+DECLARE check_is_over : FUNCTION
+FUNCTION check_is_over()
+    IF is_over THEN 
+        over_text ← 'Game Over'
+        over_render ← over_font.render(over_text,(color))
+        screen.blit(over_render,(location))
+    ENDIF
+ENDFUNCTION
+
+
+#Plane
+DECLARE PlaneImg : IMAGE
+DECLARE PlaneX : INTEGER
+DECLARE PlaneY : INTEGER
+DECLARE PlaneStep : INTEGER
+PlaneImg ← pygame.load('Plane.png')
+PlaneX ← 400
+PlaneY ← 500
+PlaneStep ← 0
+
+DECLARE move_plane : FUNCTION
+FUNCTION move_plane()
+    global PlaneX
+    PlaneX += PlaneStep
+    IF PlaneX > 736 THEN
+        PlaneX ← 736
+    ELIF PlaneX < 0 
+        PlaneX ← 0
+    ENDIF
+ENDFUNCTION
+
+DECLARE running : BOOLEAN
+DECLARE control_plane : FUNCTION
+FUNCTION control_plane()
+    global running, PlaneStep
+    FOR event in pygame.get()
+        IF event.typr == pygame.QUIT() THEN
+            running ← False
+        ENDIF
+        IF event.type == pygame.KEYDOWN
+            IF event.key == pygame.K_RIGHT THEN
+                PlaneStep ← 8
+            ELIF event.key == pygame.K_LEFT THEN
+                PlaneStep ← -8
+            ELIF event.key == pygame.K_UP THEN
+                bullets.append(Bullets())
+            ENDIF
+        ELIF event.type == pygame.KEYUP
+            PlaneStep ← 0
+        ENDIF
+    ENDFOR
+ENDFUNCTION
+
+
+#Enemy
+DECLARE number_of_enemy : INTEGER
+number_of_enemy ← 6
+
+DECLARE Enemy : CLASS
+DECLARE reset : FUNCTION
+CLASS Enemy():
+    FUNCTION __init__(self):
+        self.img ← pygame.load('Enemy.png')
+        self.x ← random.randint(200,600)
+        self.y ← random.randint(50,150)
+        self.step ← random.randint(1,6)
+    ENDFUNCTION
+    FUNCTION reset()
+        self.x ← random.randint(200,600)
+        self.y ← random.randint(50,150)
+        self.step ← random.randint(1,6)
+    ENDFUNCTION
+ENDCLASS
+
+DECLARE enemy : ARRAY
+enemy ← []
+FOR i in range(number_of_enemy)
+    enemy.append(Enemy())
+
+DECLARE show_enemy : FUNCTION
+FUNCTION show_enemy()
+    global is_over,Score
+    FOR e in enemy
+        screen.blit(e.img(e.x,e.y))
+        e.x += e.step
+        e.y ++ Score * 0.1
+        IF e.x > 736 or e.x < 0 THEN
+            e.step *= -1
+            IF e.y > 400 THEN
+                is_over ← True
+                OUTPUT('Game Over')
+                enemy.clear()
+            ENDIF
+        ENDIF
+    ENDFOR
+ENDFUNCTION
+
+
+#Distance
+DECLARE distance : FUNCTION
+DECLARE a : INTEGER
+DECLARE b : INTEGER
+FUNCTION distance(bx,vy,ex,ey)
+    a ← bx - ex
+    b ← by - ey
+    RETURN math.sqrt(a*a + b*b)
+ENDFUNCTION
+
+
+#Bullet
+DECLARE Bullet : CLASS
+DECLARE hit : FUNCTION
+CLASS Bullet()
+    FUNCTION __init__(self)
+        self.img ← pygame.load('Bullet.png')
+        self.x ← PlaneX + 16
+        self.y ← PlaneY - 16
+        self.step ← 10
+    ENDFUNCTION
+    FUNCTION hit(self)
+        global Score
+        FOR e in enemy
+            IF distance(self.x,self,y,e.x,e.y) < 30 THEN
+                bullets.remove()
+                e.reset()
+                Score += 1
+            ENDIF
+        ENDFOR
+    ENDFUNCTION
+ENDCLASS
+
+DECLARE bullets : ARRAY
+
+DECLARE show_bullet : FUNCTION
+FUNCTION show_bullet()
+    screen.blit(b.img,(b.x,b.y))
+    b.hit()
+    b.y -= b.step
+    IF b.y < 0 THEN
+        bullets.remove(b)
+    ENDIF
+ENDFUNCTION
+
+
+#Main
+DECLARE running : BOOLEAN
+WHILE running
+    screen.blit(BackgroundImg,(location))
+    show_score()
+    screen.blit(PlaneImg,(PlaneX,PlaneY))
+    control_plane()
+    move_plane()
+    show_enemy()
+    show_bullet()
+    check_is_over()
+    pygame.display.update()
+ENDWHILE
